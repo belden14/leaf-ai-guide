@@ -122,3 +122,40 @@ function normalise(raw: string, cropType: string): DiagnosisResult {
       : ((parsed["message"] as string) ?? ""),
   };
 }
+
+const ADVISOR_PROMPT = `You are AgriVision Assistant, a friendly agricultural extension advisor helping smallholder farmers and agriculture students.
+
+Rules:
+- Answer in clear, simple language. Short paragraphs or short bullet lists.
+- Cover practical crop management: planting, irrigation, soil health, pests, diseases, harvesting, storage and how to use this app.
+- Give general, safe cultural and integrated pest management advice. Never give specific pesticide products, dosages or mixing instructions.
+- Recommend confirmation by a local agricultural extension officer for significant treatment decisions.
+- Say plainly when you do not know something, and never invent local prices, laws or lab results.
+- Keep answers under about 180 words unless the farmer asks for more detail.`;
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+/** Conversational advisor used by the in-app chatbot. */
+export async function chatWithAdvisor(messages: ChatMessage[]): Promise<{ reply: string }> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new Error("AI service is not configured.");
+
+  const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      messages: [{ role: "system", content: ADVISOR_PROMPT }, ...messages],
+    }),
+  });
+
+  if (response.status === 429) throw new Error("The assistant is busy right now. Please try again in a moment.");
+  if (response.status === 402) throw new Error("AI credits are exhausted. Please top up to continue.");
+  if (!response.ok) {
+    console.error("AI gateway chat error", response.status, await response.text());
+    throw new Error("The assistant could not answer right now. Please try again.");
+  }
+
+  const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  return { reply: payload.choices?.[0]?.message?.content?.trim() || "Sorry, I could not answer that." };
+}

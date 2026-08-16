@@ -68,7 +68,7 @@ export function NavBar() {
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
-              {open ? <Menu className="size-5" /> : <Menu className="size-5" />}
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </Button>
           </div>
         </nav>
@@ -115,4 +115,4 @@ export function NavBar() {
   );
 }
 
-export { X };
+
