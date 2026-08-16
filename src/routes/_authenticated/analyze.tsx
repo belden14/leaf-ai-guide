@@ -268,7 +268,9 @@ function AnalyzePage() {
                 Analyze another image
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/history">View history</Link>
+                <Link to="/history" search={{ q: undefined }}>
+                  View history
+                </Link>
               </Button>
               <Button variant="ghost" onClick={() => navigate({ to: "/dashboard" })}>
                 Go to dashboard
